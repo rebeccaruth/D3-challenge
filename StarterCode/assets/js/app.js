@@ -44,4 +44,176 @@ function xlabelrefresh() {
 }
 xlabelrefresh();
 
+xlabel 
+.append("text")
+.attr("y", -26)
+.attr("data-name", "poverty")
+.attr("data-axis", "x")
+.attr("class", "aText active x")
+.text("In Poverty (%)");
+
+xlabel 
+.append("text")
+.attr("y", 0)
+.attr("data-name", "age")
+.attr("data-axis", "x")
+.attr("class", "aText active x")
+.text("Age (Median)");
+
+xlabel 
+.append("text")
+.attr("y", 26)
+.attr("data-name", "income")
+.attr("data-axis", "x")
+.attr("class", "aText active x")
+.text("Household Income (Median)");
+
+
+var left_text_x = margin + left_padding;
+var left_text_y = (height + label_area)/2 - label_area;
+
+
+svg.append("g").attr("class", "ylabel");
+var ylabel = d3.select(".ylabel");
+function ylabelrefresh() {
+    ylabel.attr(
+        "transform", 
+        "translate(" +
+        left_text_x + ", " + left_text_y
+        + ")rotate(-90)"
+    );
+}
+ylabelrefresh();
+
+ylabel 
+.append("text")
+.attr("x", -26)
+.attr("data-name", "obesity")
+.attr("data-axis", "y")
+.attr("class", "aText active y")
+.text("Obese (%)");
+
+ylabel 
+.append("text")
+.attr("x", 0)
+.attr("data-name", "smokes")
+.attr("data-axis", "y")
+.attr("class", "aText active y")
+.text("Smokes (%)");
+
+ylabel 
+.append("text")
+.attr("x", 26)
+.attr("data-name", "healthcare")
+.attr("data-axis", "y")
+.attr("class", "aText active y")
+.text("Lacks Healthcare (%)");
+
+function visualizeData(data) {
+    var currentX = "poverty";
+    var currentY = "obesity";
+    var minX;
+    var maxX;
+    var minY;
+    var maxY;
+
+    var toolTip = d3
+    .tip()
+    .attr("class", "d3-tip")
+    .offset([40, -60])
+    .html(function(d){
+        var x_axis;
+        var state = "<div>"+ d.state +"</div>";
+        var y_axis = "<div>" + currentY + ": " + d[currentY] + "%</div>";
+        if(currentX == "poverty") {
+            x_axis = "<div>" + currentX + ": " + d[currentX] + "%</div>";
+        }
+        else{
+            x_axis = "<div>"+ currentX + ": " + parseFloat(d[currentX]).toLocaleString("en") + " </div>";
+        }
+    return state + x_axis + y_axis;
+    });
+    svg.call(toolTip);
+
+    function x_axis_minmax(){
+        xmin = d3.min(data, function(d){
+            return parseFloat(d[currentX])* .90;
+        });
+        xmax = d3.max(data, function(d){
+            return parseFloat(d[currentX])* 1.10;
+        });
+
+    }
+    function y_axis_minmax(){
+        ymin = d3.min(data, function(d){
+            return parseFloat(d[currentY])* .90;
+        });
+        ymax = d3.max(data, function(d){
+            return parseFloat(d[currentY])* 1.10;
+        });
+        
+    }
+    function switchLabels(axis, clickedText){
+        d3
+        .selectAll(".aText")
+        .filter("."+axis)
+        .filter(".active")
+        .classed("active", false)
+        .classed("inactive", true);
+
+        clickedText.classed("inactive", false).classed("active", true);
+    }
+
+    x_axis_minmax();
+    y_axis_minmax();
+
+    var x_scale = d3
+    .scaleLinear()
+    .domain([xmin, xmax])
+    .range([margin+label_area, width-margin]);
+    var y_scale = d3
+    .scaleLinear()
+    .domain([ymin, ymax])
+    .range([height-margin-label_area, margin]);
+
+    var xAxis = d3.axisBottom(x_scale);
+    var yAxis = d3.axisLeft(y_scale);
+
+    function tickCount(){
+        if(width <=500){
+            xAxis.ticks(5);
+            yAxis.ticks(5);
+        }
+        else {
+            xAxis.ticks(10);
+            yAxis.ticks(10);
+        }
+    }
+    tickCount();
+
+    svg
+    .append("g")
+    .call(xAxis)
+    .attr("class", "xAxis")
+    .attr("transform", "translate(0, "+ (height-margin-label_area) + ")");
+
+    svg
+    .append("g")
+    .call(yAxis)
+    .attr("class", "yAxis")
+    .attr("transform", "translate("+ (margin+label_area) + ", 0)");
+
+    var circles = svg.selectAll("g theCircles").data(data).enter();
+    circles
+    .append("circle")
+    .attr("cx", function(d){
+        return x_scale(d[currentX]);
+    })
+    .attr("cy", function(d){
+        return y_scale(d[currentY]);
+    })
+
+}
+
+
 
