@@ -1,6 +1,6 @@
 d3.csv("assets/data/data.csv").then(function(data){
     console.log(data);
-
+    visualizeData(data);
 });
 
 
@@ -17,7 +17,7 @@ var svg = d3
 .append("svg")
 .attr("width", width)
 .attr("height", height)
-.attr("class", chart);
+.attr("class", "chart");
 
 var radius;
 function get_circle(){
@@ -57,7 +57,7 @@ xlabel
 .attr("y", 0)
 .attr("data-name", "age")
 .attr("data-axis", "x")
-.attr("class", "aText active x")
+.attr("class", "aText inactive x")
 .text("Age (Median)");
 
 xlabel 
@@ -65,7 +65,7 @@ xlabel
 .attr("y", 26)
 .attr("data-name", "income")
 .attr("data-axis", "x")
-.attr("class", "aText active x")
+.attr("class", "aText inactive x")
 .text("Household Income (Median)");
 
 
@@ -78,16 +78,14 @@ var ylabel = d3.select(".ylabel");
 function ylabelrefresh() {
     ylabel.attr(
         "transform", 
-        "translate(" +
-        left_text_x + ", " + left_text_y
-        + ")rotate(-90)"
+        "translate(" + left_text_x + ", " + left_text_y + ")rotate(-90)"
     );
 }
 ylabelrefresh();
 
 ylabel 
 .append("text")
-.attr("x", -26)
+.attr("y", -26)
 .attr("data-name", "obesity")
 .attr("data-axis", "y")
 .attr("class", "aText active y")
@@ -95,18 +93,18 @@ ylabel
 
 ylabel 
 .append("text")
-.attr("x", 0)
+.attr("y", 0)
 .attr("data-name", "smokes")
 .attr("data-axis", "y")
-.attr("class", "aText active y")
+.attr("class", "aText inactive y")
 .text("Smokes (%)");
 
 ylabel 
 .append("text")
-.attr("x", 26)
+.attr("y", 26)
 .attr("data-name", "healthcare")
 .attr("data-axis", "y")
-.attr("class", "aText active y")
+.attr("class", "aText inactive y")
 .text("Lacks Healthcare (%)");
 
 function visualizeData(data) {
@@ -212,6 +210,103 @@ function visualizeData(data) {
     .attr("cy", function(d){
         return y_scale(d[currentY]);
     })
+    .attr("r", radius)
+    .attr("class", function(d){
+        return "stateCircle " + d.abbr;
+    })
+    .on("mouseover", function(d){
+        toolTip.show(d, this);
+        d3.select(this).style("stroke", "#323232")
+    })
+    .on("mouseout", function(d){
+        toolTip.hide(d);
+        d3.select(this).style("stroke", "#e3e3e3")
+    });
+
+    circles
+    .append("text")
+    .text(function(d){
+        return d.abbr;
+    })
+    .attr("dx", function(d){
+        return x_scale(d[currentX]);
+    })
+    .attr("dy", function(d){
+        return y_scale(d[currentY]) + radius/2.5;
+    })
+    .attr("font-size", radius)
+    .attr("class", "stateText")
+    .on("mouseover", function(d){
+        toolTip.show(d);
+        d3.select("." + d.abbr).style("stroke", "#323232");
+    })
+    .on("mouseout", function(d){
+        toolTip.hide(d);
+        d3.select("." + d.abbr).style("stroke", "#e3e3e3");
+    })
+
+    d3.selectAll(".aText").on("click", function(){
+        var self = d3.select(this);
+        if(self.classed("inactive")){
+            var axis = self.attr("data-axis");
+            var name = self.attr("data-name");
+            if(axis === "x"){
+                currentX = name;
+                x_axis_minmax();
+                x_scale.domain([xmin, xmax]);
+                svg.select(".xAxis").transition().duration(300).call(xAxis);
+                d3.selectAll("circle").each(function(){
+                    d3
+                    .select(this)
+                    .transition()
+                    .attr("cx", function(d){
+                        return x_scale(d[currentX]);
+                    })
+                    .duration(300);
+                });
+                d3.selectAll(".stateText").each(function(){
+                    d3
+                    .select(this)
+                    .transition()
+                    .attr("dx", function(d){
+                        return x_scale(d[currentX]);
+                    })
+                .duration(300)    
+                });
+                switchLabels(axis, self);    
+            }
+            else{
+                currentY = name;
+                y_axis_minmax();
+                y_scale.domain([ymin, ymax]);
+                svg.select(".yAxis").transition().duration(300).call(yAxis);
+                d3.selectAll("circle").each(function(){
+                    d3
+                    .select(this)
+                    .transition()
+                    .attr("cy", function(d){
+                        return y_scale(d[currentY]);
+                    })
+                    .duration(300);
+                });
+                d3.selectAll(".stateText").each(function(){
+                    d3
+                    .select(this)
+                    .transition()
+                    .attr("dy", function(d){
+                        return y_scale(d[currentY]);
+                    })
+                .duration(300)    
+                });
+                switchLabels(axis, self); 
+            }
+
+        }
+
+
+    });
+
+
 
 }
 
